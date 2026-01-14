@@ -1,0 +1,337 @@
+﻿@page "/pessoas"
+@rendermode InteractiveServer
+@inject AppDbContext DbContext
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudText Typo="Typo.h4" Class="mb-4">Gerenciar Pessoas</MudText>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AbrirModalNovo" StartIcon="@Icons.Material.Filled.Add">
+        Nova Pessoa
+    </MudButton>
+</MudPaper>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudGrid>
+        <MudItem xs="12" sm="8">
+            <MudTextField @bind-Value="_searchString"
+                          Placeholder="Buscar por nome..." 
+                          Adornment="Adornment.Start" 
+                          AdornmentIcon="@Icons.Material.Filled.Search" 
+                          IconSize="Size.Medium" 
+                          Variant="Variant.Outlined"
+                          Class="mt-0"></MudTextField>
+        </MudItem>
+        <MudItem xs="12" sm="2">
+            <MudButton Variant="Variant.Outlined" 
+                       Color="Color.Secondary" 
+                       OnClick="LimparBusca"
+                       FullWidth="true"
+                       StartIcon="@Icons.Material.Filled.Clear">
+                Limpar
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudTable Items="@PessoasFiltradas" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info">
+    <HeaderContent>
+        <MudTh>Nome</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Partes Habilitadas</MudTh>
+        <MudTh>Ações</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Nome">@context.Nome</MudTd>
+        <MudTd DataLabel="Status">
+            <MudChip T="string" Color="@(context.Ativo ? Color.Success : Color.Default)" Size="Size.Small">
+                @(context.Ativo ? "Ativo" : "Inativo")
+            </MudChip>
+        </MudTd>
+        <MudTd DataLabel="Partes">
+            <MudText Typo="Typo.body2">@ObterPartesHabilitadas(context.Id)</MudText>
+        </MudTd>
+        <MudTd DataLabel="Ações">
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => AbrirModalEditar(context))" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => Excluir(context.Id))" />
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+<!-- Modal Adicionar -->
+<MudDialog @bind-Visible="_modalAdicionarVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Nova Pessoa</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_novaPessoa.Nome" Label="Nome" Variant="Variant.Outlined" Required="true" />
+        
+        <MudSwitch T="bool" @bind-Value="_novaPessoa.Ativo" Color="Color.Primary" Label="Ativo" Class="mt-3" />
+        
+        <MudText Typo="Typo.h6" Class="mt-4 mb-2">Partes Habilitadas</MudText>
+        <MudGrid>
+            @foreach (TipoParte parte in Enum.GetValues(typeof(TipoParte)))
+            {
+                var parteLocal = parte;
+                
+                <MudItem xs="12" sm="6">
+                    <MudCheckBox T="bool" @bind-Value="@_partesNovas[parteLocal]" Color="Color.Primary">
+                        @ObterNomeParte(parteLocal)
+                    </MudCheckBox>
+                </MudItem>
+            }
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="FecharModalAdicionar">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SalvarNovo">Salvar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<!-- Modal Editar -->
+<MudDialog @bind-Visible="_modalEditarVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Editar Pessoa</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_pessoaEditando.Nome" Label="Nome" Variant="Variant.Outlined" Required="true" />
+        
+        <MudSwitch T="bool" @bind-Value="_pessoaEditando.Ativo" Color="Color.Primary" Label="Ativo" Class="mt-3" />
+        
+        <MudText Typo="Typo.h6" Class="mt-4 mb-2">Partes Habilitadas</MudText>
+        <MudGrid>
+            @foreach (TipoParte parte in Enum.GetValues(typeof(TipoParte)))
+            {
+                var parteLocal = parte;
+                
+                <MudItem xs="12" sm="6">
+                    <MudCheckBox T="bool" @bind-Value="@_partesEditando[parteLocal]" Color="Color.Primary">
+                        @ObterNomeParte(parteLocal)
+                    </MudCheckBox>
+                </MudItem>
+            }
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="FecharModalEditar">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SalvarEdicao">Salvar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<Pessoa> _pessoas = new();
+    private bool _loading = true;
+    private string _searchString = "";
+    
+    // Modal Adicionar
+    private bool _modalAdicionarVisible = false;
+    private Pessoa _novaPessoa = new();
+    private Dictionary<TipoParte, bool> _partesNovas = new();
+    
+    // Modal Editar
+    private bool _modalEditarVisible = false;
+    private Pessoa _pessoaEditando = new();
+    private Dictionary<TipoParte, bool> _partesEditando = new();
+    
+    private DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarPessoas();
+    }
+
+    private async Task CarregarPessoas()
+    {
+        _loading = true;
+        _pessoas = await DbContext.Pessoas
+            .Include(p => p.Partes)
+            .OrderBy(p => p.Nome)
+            .ToListAsync();
+        _loading = false;
+    }
+    
+    private void OnSearchChanged(string value)
+    {
+        _searchString = value;
+        StateHasChanged();
+    }
+
+    
+    private List<Pessoa> PessoasFiltradas
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_searchString))
+                return _pessoas;
+        
+            return _pessoas.Where(p => 
+                p.Nome.ToLower().Contains(_searchString.ToLower())
+            ).ToList();
+        }
+    }
+    
+    private void LimparBusca()
+    {
+        _searchString = "";
+    }
+
+    // ADICIONAR
+    private void AbrirModalNovo()
+    {
+        _novaPessoa = new Pessoa { Ativo = true };
+        _partesNovas = Enum.GetValues<TipoParte>().ToDictionary(p => p, p => false);
+        _modalAdicionarVisible = true;
+    }
+
+    private async Task SalvarNovo()
+    {
+        if (string.IsNullOrWhiteSpace(_novaPessoa.Nome))
+        {
+            Snackbar.Add("Nome é obrigatório", Severity.Error);
+            return;
+        }
+
+        DbContext.Pessoas.Add(_novaPessoa);
+        await DbContext.SaveChangesAsync();
+
+        foreach (var parte in _partesNovas.Where(p => p.Value))
+        {
+            DbContext.PessoasPartes.Add(new PessoaParte
+            {
+                PessoaId = _novaPessoa.Id,
+                TipoParte = parte.Key,
+                Habilitado = true
+            });
+        }
+
+        await DbContext.SaveChangesAsync();
+        await CarregarPessoas();
+        FecharModalAdicionar();
+        Snackbar.Add("Pessoa adicionada com sucesso!", Severity.Success);
+    }
+
+    private void FecharModalAdicionar()
+    {
+        _modalAdicionarVisible = false;
+    }
+
+    // EDITAR
+    private async Task AbrirModalEditar(Pessoa pessoa)
+    {
+        _pessoaEditando = new Pessoa
+        {
+            Id = pessoa.Id,
+            Nome = pessoa.Nome,
+            Ativo = pessoa.Ativo
+        };
+
+        var partesExistentes = await DbContext.PessoasPartes
+            .Where(pp => pp.PessoaId == pessoa.Id)
+            .ToListAsync();
+
+        _partesEditando = Enum.GetValues<TipoParte>().ToDictionary(
+            p => p,
+            p => partesExistentes.Any(pe => pe.TipoParte == p && pe.Habilitado)
+        );
+
+        _modalEditarVisible = true;
+    }
+
+    private async Task SalvarEdicao()
+    {
+        if (string.IsNullOrWhiteSpace(_pessoaEditando.Nome))
+        {
+            Snackbar.Add("Nome é obrigatório", Severity.Error);
+            return;
+        }
+
+        var pessoaDb = await DbContext.Pessoas.FindAsync(_pessoaEditando.Id);
+        if (pessoaDb != null)
+        {
+            pessoaDb.Nome = _pessoaEditando.Nome;
+            pessoaDb.Ativo = _pessoaEditando.Ativo;
+        }
+
+        var partesExistentes = await DbContext.PessoasPartes
+            .Where(pp => pp.PessoaId == _pessoaEditando.Id)
+            .ToListAsync();
+
+        DbContext.PessoasPartes.RemoveRange(partesExistentes);
+
+        foreach (var parte in _partesEditando.Where(p => p.Value))
+        {
+            DbContext.PessoasPartes.Add(new PessoaParte
+            {
+                PessoaId = _pessoaEditando.Id,
+                TipoParte = parte.Key,
+                Habilitado = true
+            });
+        }
+
+        await DbContext.SaveChangesAsync();
+        await CarregarPessoas();
+        FecharModalEditar();
+        Snackbar.Add("Pessoa atualizada com sucesso!", Severity.Success);
+    }
+
+    private void FecharModalEditar()
+    {
+        _modalEditarVisible = false;
+    }
+
+    // EXCLUIR
+    private async Task Excluir(int id)
+    {
+        var pessoa = await DbContext.Pessoas.FindAsync(id);
+        if (pessoa == null) return;
+
+        var parameters = new DialogParameters
+        {
+            { "ContentText", $"Tem certeza que deseja excluir '{pessoa.Nome}'? Esta ação não pode ser desfeita." },
+            { "ButtonText", "Excluir" },
+            { "Color", Color.Error }
+        };
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small };
+
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirmar Exclusão", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            DbContext.Pessoas.Remove(pessoa);
+            await DbContext.SaveChangesAsync();
+            await CarregarPessoas();
+            Snackbar.Add("Pessoa excluída com sucesso!", Severity.Success);
+        }
+    }
+
+    private string ObterPartesHabilitadas(int pessoaId)
+    {
+        var partes = _pessoas.FirstOrDefault(p => p.Id == pessoaId)?.Partes
+            .Where(p => p.Habilitado)
+            .Select(p => ObterNomeParte(p.TipoParte))
+            .ToList();
+
+        return partes?.Any() == true ? string.Join(", ", partes.Take(3)) + (partes.Count > 3 ? "..." : "") : "Nenhuma";
+    }
+
+    private string ObterNomeParte(TipoParte tipo)
+    {
+        return tipo switch
+        {
+            TipoParte.Presidentes => "Presidentes",
+            TipoParte.OracaoInicialFinal => "Oração Inicial/Final",
+            TipoParte.TesourosPalavra => "Tesouros da Palavra",
+            TipoParte.EncontreJoias => "Encontre Joias",
+            TipoParte.LeituraBiblia => "Leitura da Bíblia",
+            TipoParte.FacaSeuMelhorCampoMasculino => "Faça Seu Melhor - Campo (M)",
+            TipoParte.FacaSeuMelhorCampoFeminino => "Faça Seu Melhor - Campo (F)",
+            TipoParte.FacaSeuMelhorSalaFeminino => "Faça Seu Melhor - Sala (F)",
+            TipoParte.NossaVidaCrista => "Nossa Vida Cristã",
+            TipoParte.EstudoLivro => "Estudo de Livro",
+            _ => tipo.ToString()
+        };
+    }
+}

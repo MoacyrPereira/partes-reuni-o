@@ -1,0 +1,562 @@
+﻿@page "/gerar-mes"
+@rendermode InteractiveServer
+@inject AppDbContext DbContext
+@inject PdfService PdfService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+
+<MudText Typo="Typo.h4" Class="mb-4">Gerar Programação do Mês</MudText>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudGrid>
+        <MudItem xs="12" sm="4">
+            <MudSelect @bind-Value="_mesSelecionado" Label="Mês" Variant="Variant.Outlined">
+                @for (int i = 1; i <= 12; i++)
+                {
+                    var mes = i;
+                    <MudSelectItem Value="@mes">@ObterNomeMes(mes)</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudNumericField @bind-Value="_anoSelecionado" Label="Ano" Variant="Variant.Outlined" Min="2024" Max="2030" />
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CarregarOuCriarSemanas" FullWidth="true" Class="mt-1">
+                Carregar/Criar Semanas
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_semanas.Any())
+{
+    <MudTabs Elevation="2" Rounded="true" Color="Color.Primary">
+        @foreach (var semana in _semanas.OrderBy(s => s.NumeroSemana))
+        {
+            <MudTabPanel Text="@($"Semana {semana.NumeroSemana}")">
+                <MudPaper Class="pa-4 mt-4">
+                    
+                    <!-- CABEÇALHO -->
+                    <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4" Style="font-weight: bold;">
+                        NOSSA VIDA E MINISTÉRIO CRISTÃO
+                    </MudText>
+                    
+                    <MudTextField @bind-Value="semana.PeriodoTexto" Label="Período" Variant="Variant.Outlined" FullWidth="true" Class="mb-4" />
+                    
+                    <!-- SEÇÃO 1: ABERTURA -->
+                    <MudPaper Class="pa-3 mb-3" Elevation="1">
+                        <MudGrid>
+                            <MudItem xs="6" sm="2">
+                                <MudText Typo="Typo.body1"><strong>Cântico</strong></MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="2">
+                                <MudNumericField @bind-Value="semana.CanticoInicial" Variant="Variant.Outlined" Min="1" Max="200" />
+                            </MudItem>
+                            <MudItem xs="6" sm="4">
+                                <MudText Typo="Typo.body1"><strong>Oração Inicial:</strong></MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="4">
+                                <MudSelect T="int?" @bind-Value="semana.OracaoInicialPessoaId" Variant="Variant.Outlined" Clearable="true">
+                                    @foreach (var pessoa in _pessoasOracaoInicial)
+                                    {
+                                        <MudSelectItem Value="@((int?)pessoa.Id)">@pessoa.Nome</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+                        
+                        <MudDivider Class="my-2" />
+                        
+                        <MudGrid>
+                            <MudItem xs="2" sm="1">
+                                <MudNumericField @bind-Value="semana.MinutosPresidente" Variant="Variant.Outlined" Min="1" Max="10" Label="Min" />
+                            </MudItem>
+                            <MudItem xs="4" sm="3">
+                                <MudText Typo="Typo.body1" Class="mt-2"><strong>Presidente:</strong></MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="3">
+                                <MudText Typo="Typo.body2" Class="mt-2">Comentários Iniciais</MudText>
+                            </MudItem>
+                            <MudItem xs="12" sm="5">
+                                <MudSelect T="int?" @bind-Value="semana.PresidentePessoaId" Variant="Variant.Outlined" Clearable="true">
+                                    @foreach (var pessoa in _pessoasPresidentes)
+                                    {
+                                        <MudSelectItem Value="@((int?)pessoa.Id)">@pessoa.Nome</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                    
+                    <!-- SEÇÃO 2: TESOUROS DA PALAVRA DE DEUS -->
+                    <MudText Typo="Typo.h6" Class="mt-4 mb-2" Style="background-color: black; color: white; padding: 8px; text-align: center;">
+                        TESOUROS DA PALAVRA DE DEUS
+                    </MudText>
+                    
+                    <MudPaper Class="pa-3 mb-2" Elevation="1">
+                        <MudGrid>
+                            <MudItem xs="2" sm="1">
+                                <MudNumericField @bind-Value="semana.MinutosTesourosPalavra" Variant="Variant.Outlined" Min="1" Max="30" Label="Min" />
+                            </MudItem>
+                            <MudItem xs="10" sm="5">
+                                <MudSelect T="int?" @bind-Value="semana.TesourosPalavraPessoaId" Variant="Variant.Outlined" Clearable="true" Label="Pessoa">
+                                    @foreach (var pessoa in _pessoasTesourosPalavra)
+                                    {
+                                        <MudSelectItem Value="@((int?)pessoa.Id)">@pessoa.Nome</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="semana.TesourosTema" Label="Tesouros da Palavra de Deus:" Variant="Variant.Outlined" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                    
+                    <MudPaper Class="pa-3 mb-2" Elevation="1">
+                        <MudGrid>
+                            <MudItem xs="2" sm="1">
+                                <MudNumericField @bind-Value="semana.MinutosJoiasEspirituais" Variant="Variant.Outlined" Min="1" Max="30" Label="Min" />
+                            </MudItem>
+                            <MudItem xs="10" sm="5">
+                                <MudSelect T="int?" @bind-Value="semana.JoiasEspirituaisPessoaId" Variant="Variant.Outlined" Clearable="true" Label="Pessoa">
+                                    @foreach (var pessoa in _pessoasEncontreJoias)
+                                    {
+                                        <MudSelectItem Value="@((int?)pessoa.Id)">@pessoa.Nome</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="semana.JoiasTema" Label="Joias espirituais:" Variant="Variant.Outlined" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                    
+                    <MudPaper Class="pa-3 mb-2" Elevation="1">
+                        <MudGrid>
+                            <MudItem xs="2" sm="1">
+                                <MudNumericField @bind-Value="semana.MinutosLeituraBiblia" Variant="Variant.Outlined" Min="1" Max="30" Label="Min" />
+                            </MudItem>
+                            <MudItem xs="10" sm="5">
+                                <MudSelect T="int?" @bind-Value="semana.LeituraBibliaPessoaId" Variant="Variant.Outlined" Clearable="true" Label="Pessoa">
+                                    @foreach (var pessoa in _pessoasLeituraBiblia)
+                                    {
+                                        <MudSelectItem Value="@((int?)pessoa.Id)">@pessoa.Nome</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="semana.LeituraTema" Label="Leitura da Bíblia:" Variant="Variant.Outlined" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                    
+                    <!-- SEÇÃO 3: FAÇA SEU MELHOR NO MINISTÉRIO -->
+                    <MudText Typo="Typo.h6" Class="mt-4 mb-2" Style="background-color: black; color: white; padding: 8px; text-align: center;">
+                        FAÇA SEU MELHOR NO MINISTÉRIO
+                    </MudText>
+                    
+                    @foreach (var parte in semana.PartesMinisterio.OrderBy(p => p.Ordem))
+                    {
+                        <MudPaper Class="pa-3 mb-2" Elevation="1">
+                            <MudGrid>
+                                <MudItem xs="2" sm="1">
+                                    <MudNumericField @bind-Value="parte.Minutos" Variant="Variant.Outlined" Min="1" Max="30" Label="Min" />
+                                </MudItem>
+                                <MudItem xs="5" sm="3">
+                                    <MudSelect T="int?" @bind-Value="parte.Pessoa1Id" Variant="Variant.Outlined" Clearable="true" Label="Pessoa 1">
+                                        @foreach (var pessoa in _pessoasMinisterio)
+                                        {
+                                            <MudSelectItem Value="@((int?)pessoa.Id)">@pessoa.Nome</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="5" sm="3">
+                                    <MudSelect T="int?" @bind-Value="parte.Pessoa2Id" Variant="Variant.Outlined" Clearable="true" Label="Pessoa 2">
+                                        @foreach (var pessoa in _pessoasMinisterio)
+                                        {
+                                            <MudSelectItem Value="@((int?)pessoa.Id)">@pessoa.Nome</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="10" sm="4">
+                                    <MudTextField @bind-Value="parte.Titulo" Label="Título" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="2" sm="1">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => RemoverParteMinisterio(semana, parte))" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudTextField @bind-Value="parte.Subtitulo" Label="Subtítulo" Variant="Variant.Outlined" />
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                    }
+                    
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => AdicionarParteMinisterio(semana))" Class="mb-3">
+                        Adicionar Parte Ministério
+                    </MudButton>
+                    
+                    <!-- SEÇÃO 4: NOSSA VIDA CRISTÃ -->
+                    <MudText Typo="Typo.h6" Class="mt-4 mb-2" Style="background-color: black; color: white; padding: 8px; text-align: center;">
+                        NOSSA VIDA CRISTÃ
+                    </MudText>
+                    
+                    <MudPaper Class="pa-3 mb-3" Elevation="1">
+                        <MudGrid>
+                            <MudItem xs="6" sm="2">
+                                <MudText Typo="Typo.body1"><strong>Cântico:</strong></MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="2">
+                                <MudNumericField @bind-Value="semana.CanticoMeio" Variant="Variant.Outlined" Min="1" Max="200" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                    
+                    @foreach (var parte in semana.PartesVidaCrista.OrderBy(p => p.Ordem))
+                    {
+                        <MudPaper Class="pa-3 mb-2" Elevation="1">
+                            <MudGrid>
+                                <MudItem xs="2" sm="1">
+                                    <MudNumericField @bind-Value="parte.Minutos" Variant="Variant.Outlined" Min="1" Max="60" Label="Min" />
+                                </MudItem>
+                                <MudItem xs="10" sm="6">
+                                    <MudTextField @bind-Value="parte.Titulo" Label="Título" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="10" sm="4">
+                                    <MudSelect T="int?" @bind-Value="parte.PessoaId" Variant="Variant.Outlined" Clearable="true" Label="Pessoa">
+                                        @foreach (var pessoa in _pessoasNossaVida)
+                                        {
+                                            <MudSelectItem Value="@((int?)pessoa.Id)">@pessoa.Nome</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="2" sm="1">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => RemoverParteVidaCrista(semana, parte))" />
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                    }
+                    
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => AdicionarParteVidaCrista(semana))" Class="mb-3">
+                        Adicionar Parte Vida Cristã
+                    </MudButton>
+                    
+                    <!-- ESTUDO DE LIVRO (FIXO) -->
+                    <MudPaper Class="pa-3 mb-3" Elevation="1">
+                        <MudGrid>
+                            <MudItem xs="2" sm="1">
+                                <MudNumericField @bind-Value="semana.MinutosEstudoLivro" Variant="Variant.Outlined" Min="1" Max="60" Label="Min" />
+                            </MudItem>
+                            <MudItem xs="10" sm="3">
+                                <MudSelect T="int?" @bind-Value="semana.EstudoLivroDirigentePessoaId" Variant="Variant.Outlined" Clearable="true" Label="Dirigente">
+                                    @foreach (var pessoa in _pessoasEstudoLivro)
+                                    {
+                                        <MudSelectItem Value="@((int?)pessoa.Id)">@pessoa.Nome</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="3">
+                                <MudSelect T="int?" @bind-Value="semana.EstudoLivroLeitorPessoaId" Variant="Variant.Outlined" Clearable="true" Label="Leitor">
+                                    @foreach (var pessoa in _pessoasEstudoLivro)
+                                    {
+                                        <MudSelectItem Value="@((int?)pessoa.Id)">@pessoa.Nome</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="5">
+                                <MudTextField @bind-Value="semana.EstudoLivroTema" Label="Livro:" Variant="Variant.Outlined" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                    
+                    <!-- COMENTÁRIOS FINAIS E ENCERRAMENTO -->
+                    <MudPaper Class="pa-3 mb-3" Elevation="1">
+                        <MudGrid>
+                            <MudItem xs="2" sm="1">
+                                <MudNumericField @bind-Value="semana.MinutosComentariosFinais" Variant="Variant.Outlined" Min="1" Max="10" Label="Min" />
+                            </MudItem>
+                            <MudItem xs="10" sm="5">
+                                <MudSelect T="int?" @bind-Value="semana.ComentariosFinaisPessoaId" Variant="Variant.Outlined" Clearable="true" Label="Comentários finais">
+                                    @foreach (var pessoa in _pessoasPresidentes)
+                                    {
+                                        <MudSelectItem Value="@((int?)pessoa.Id)">@pessoa.Nome</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+                        
+                        <MudDivider Class="my-2" />
+                        
+                        <MudGrid>
+                            <MudItem xs="6" sm="2">
+                                <MudText Typo="Typo.body1"><strong>Cântico:</strong></MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="2">
+                                <MudNumericField @bind-Value="semana.CanticoFinal" Variant="Variant.Outlined" Min="1" Max="200" />
+                            </MudItem>
+                            <MudItem xs="6" sm="4">
+                                <MudText Typo="Typo.body1"><strong>Oração final:</strong></MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="4">
+                                <MudSelect T="int?" @bind-Value="semana.OracaoFinalPessoaId" Variant="Variant.Outlined" Clearable="true">
+                                    @foreach (var pessoa in _pessoasOracaoInicial)
+                                    {
+                                        <MudSelectItem Value="@((int?)pessoa.Id)">@pessoa.Nome</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                    
+                </MudPaper>
+            </MudTabPanel>
+        }
+    </MudTabs>
+    
+    <MudPaper Class="pa-4 mt-4">
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="SalvarTudo" StartIcon="@Icons.Material.Filled.Save" Class="mr-2">
+            Salvar Tudo
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GerarPdf" StartIcon="@Icons.Material.Filled.PictureAsPdf">
+            Gerar PDF
+        </MudButton>
+    </MudPaper>
+}
+
+@code {
+    private int _mesSelecionado = DateTime.Now.Month;
+    private int _anoSelecionado = DateTime.Now.Year;
+    private List<DesignacaoSemana> _semanas = new();
+    
+    // Listas de pessoas por tipo de parte
+    private List<Pessoa> _pessoasPresidentes = new();
+    private List<Pessoa> _pessoasOracaoInicial = new();
+    private List<Pessoa> _pessoasTesourosPalavra = new();
+    private List<Pessoa> _pessoasEncontreJoias = new();
+    private List<Pessoa> _pessoasLeituraBiblia = new();
+    private List<Pessoa> _pessoasMinisterio = new();
+    private List<Pessoa> _pessoasNossaVida = new();
+    private List<Pessoa> _pessoasEstudoLivro = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarPessoas();
+    }
+
+    private async Task CarregarPessoas()
+    {
+        _pessoasPresidentes = await DbContext.PessoasPartes
+            .Include(pp => pp.Pessoa)
+            .Where(pp => pp.TipoParte == TipoParte.Presidentes && pp.Habilitado && pp.Pessoa.Ativo)
+            .Select(pp => pp.Pessoa)
+            .OrderBy(p => p.Nome)
+            .ToListAsync();
+        
+        _pessoasOracaoInicial = await DbContext.PessoasPartes
+            .Include(pp => pp.Pessoa)
+            .Where(pp => pp.TipoParte == TipoParte.OracaoInicialFinal && pp.Habilitado && pp.Pessoa.Ativo)
+            .Select(pp => pp.Pessoa)
+            .OrderBy(p => p.Nome)
+            .ToListAsync();
+        
+        _pessoasTesourosPalavra = await DbContext.PessoasPartes
+            .Include(pp => pp.Pessoa)
+            .Where(pp => pp.TipoParte == TipoParte.TesourosPalavra && pp.Habilitado && pp.Pessoa.Ativo)
+            .Select(pp => pp.Pessoa)
+            .OrderBy(p => p.Nome)
+            .ToListAsync();
+        
+        _pessoasEncontreJoias = await DbContext.PessoasPartes
+            .Include(pp => pp.Pessoa)
+            .Where(pp => pp.TipoParte == TipoParte.EncontreJoias && pp.Habilitado && pp.Pessoa.Ativo)
+            .Select(pp => pp.Pessoa)
+            .OrderBy(p => p.Nome)
+            .ToListAsync();
+        
+        _pessoasLeituraBiblia = await DbContext.PessoasPartes
+            .Include(pp => pp.Pessoa)
+            .Where(pp => pp.TipoParte == TipoParte.LeituraBiblia && pp.Habilitado && pp.Pessoa.Ativo)
+            .Select(pp => pp.Pessoa)
+            .OrderBy(p => p.Nome)
+            .ToListAsync();
+        
+        _pessoasMinisterio = await DbContext.Pessoas
+            .Where(p => p.Ativo)
+            .OrderBy(p => p.Nome)
+            .ToListAsync();
+        
+        _pessoasNossaVida = await DbContext.PessoasPartes
+            .Include(pp => pp.Pessoa)
+            .Where(pp => pp.TipoParte == TipoParte.NossaVidaCrista && pp.Habilitado && pp.Pessoa.Ativo)
+            .Select(pp => pp.Pessoa)
+            .OrderBy(p => p.Nome)
+            .ToListAsync();
+        
+        _pessoasEstudoLivro = await DbContext.PessoasPartes
+            .Include(pp => pp.Pessoa)
+            .Where(pp => pp.TipoParte == TipoParte.EstudoLivro && pp.Habilitado && pp.Pessoa.Ativo)
+            .Select(pp => pp.Pessoa)
+            .OrderBy(p => p.Nome)
+            .ToListAsync();
+    }
+
+    private async Task CarregarOuCriarSemanas()
+    {
+        var semanasExistentes = await DbContext.DesignacoesSemanas
+            .Include(s => s.PartesMinisterio)
+            .Include(s => s.PartesVidaCrista)
+            .Where(s => s.Mes == _mesSelecionado && s.Ano == _anoSelecionado)
+            .OrderBy(s => s.NumeroSemana)
+            .ToListAsync();
+
+        if (semanasExistentes.Any())
+        {
+            _semanas = semanasExistentes;
+            Snackbar.Add("Semanas carregadas com sucesso!", Severity.Success);
+        }
+        else
+        {
+            CriarSemanasVazias();
+            Snackbar.Add("Semanas criadas! Preencha as informações.", Severity.Info);
+        }
+    }
+
+    private void CriarSemanasVazias()
+    {
+        _semanas.Clear();
+        var quintas = ObterQuintasFeiras(_mesSelecionado, _anoSelecionado);
+        
+        for (int i = 0; i < quintas.Count; i++)
+        {
+            var semana = new DesignacaoSemana
+            {
+                Mes = _mesSelecionado,
+                Ano = _anoSelecionado,
+                NumeroSemana = i + 1,
+                PeriodoTexto = ObterPeriodoTexto(quintas[i]),
+                CanticoInicial = 1,
+                CanticoMeio = 1,
+                CanticoFinal = 1,
+                PartesMinisterio = new List<ParteMinisterio>
+                {
+                    new() { Ordem = 1, Minutos = 3, Titulo = "Iniciando conversas", Subtitulo = "TESTEMUNHO INFORMAL" },
+                    new() { Ordem = 2, Minutos = 4, Titulo = "Iniciando conversas", Subtitulo = "DE CASA EM CASA" },
+                    new() { Ordem = 3, Minutos = 5, Titulo = "Iniciando conversas", Subtitulo = "TESTEMUNHO INFORMAL" }
+                },
+                PartesVidaCrista = new List<ParteVidaCrista>
+                {
+                    new() { Ordem = 1, Minutos = 15, Titulo = "NECESSIDADES LOCAIS" }
+                }
+            };
+            
+            _semanas.Add(semana);
+        }
+    }
+
+    private List<DateTime> ObterQuintasFeiras(int mes, int ano)
+    {
+        var quintas = new List<DateTime>();
+        var primeiroDia = new DateTime(ano, mes, 1);
+        var ultimoDia = primeiroDia.AddMonths(1).AddDays(-1);
+        
+        for (var data = primeiroDia; data <= ultimoDia; data = data.AddDays(1))
+        {
+            if (data.DayOfWeek == DayOfWeek.Thursday)
+                quintas.Add(data);
+        }
+        
+        return quintas;
+    }
+
+    private string ObterPeriodoTexto(DateTime data)
+    {
+        var fimSemana = data.AddDays(6);
+        return $"{data.Day:00} A {fimSemana.Day:00} DE {ObterNomeMes(data.Month).ToUpper()}";
+    }
+
+    private void AdicionarParteMinisterio(DesignacaoSemana semana)
+    {
+        var proximaOrdem = semana.PartesMinisterio.Any() ? semana.PartesMinisterio.Max(p => p.Ordem) + 1 : 1;
+        semana.PartesMinisterio.Add(new ParteMinisterio 
+        { 
+            Ordem = proximaOrdem, 
+            Minutos = 3, 
+            Titulo = "Iniciando conversas",
+            Subtitulo = "TESTEMUNHO INFORMAL"
+        });
+    }
+
+    private void RemoverParteMinisterio(DesignacaoSemana semana, ParteMinisterio parte)
+    {
+        semana.PartesMinisterio.Remove(parte);
+    }
+
+    private void AdicionarParteVidaCrista(DesignacaoSemana semana)
+    {
+        var proximaOrdem = semana.PartesVidaCrista.Any() ? semana.PartesVidaCrista.Max(p => p.Ordem) + 1 : 1;
+        semana.PartesVidaCrista.Add(new ParteVidaCrista 
+        { 
+            Ordem = proximaOrdem, 
+            Minutos = 15, 
+            Titulo = "NECESSIDADES LOCAIS"
+        });
+    }
+
+    private void RemoverParteVidaCrista(DesignacaoSemana semana, ParteVidaCrista parte)
+    {
+        semana.PartesVidaCrista.Remove(parte);
+    }
+
+    private async Task SalvarTudo()
+    {
+        try
+        {
+            foreach (var semana in _semanas)
+            {
+                if (semana.Id == 0)
+                {
+                    DbContext.DesignacoesSemanas.Add(semana);
+                }
+                else
+                {
+                    DbContext.DesignacoesSemanas.Update(semana);
+                }
+            }
+            
+            await DbContext.SaveChangesAsync();
+            Snackbar.Add("Programação salva com sucesso!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao salvar: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task GerarPdf()
+    {
+        try
+        {
+            await SalvarTudo();
+        
+            var pdfBytes = await PdfService.GerarPdfMes(_mesSelecionado, _anoSelecionado);
+        
+            await JS.InvokeVoidAsync("downloadFile", 
+                Convert.ToBase64String(pdfBytes), 
+                $"programacao_{ObterNomeMes(_mesSelecionado)}_{_anoSelecionado}.pdf",
+                "application/pdf");
+        
+            Snackbar.Add("PDF gerado com sucesso!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao gerar PDF: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private string ObterNomeMes(int mes)
+    {
+        var meses = new[] { "", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                           "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro" };
+        return meses[mes];
+    }
+}
