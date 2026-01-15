@@ -4,6 +4,13 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
+@if (_loading)
+{
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); backdrop-filter: blur(5px); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+        <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+    </div>
+}
+
 <MudText Typo="Typo.h4" Class="mb-4">Gerenciar Pessoas</MudText>
 
 <MudPaper Class="pa-4 mb-4">
@@ -144,11 +151,17 @@
     private async Task CarregarPessoas()
     {
         _loading = true;
+        StateHasChanged(); // Força atualização da UI
+    
+        await Task.Delay(100); // Pequeno delay para garantir que o loading apareça
+    
         _pessoas = await DbContext.Pessoas
             .Include(p => p.Partes)
             .OrderBy(p => p.Nome)
             .ToListAsync();
+    
         _loading = false;
+        StateHasChanged();
     }
     
     private void OnSearchChanged(string value)
@@ -191,6 +204,9 @@
             Snackbar.Add("Nome é obrigatório", Severity.Error);
             return;
         }
+        
+        _loading = true;
+        StateHasChanged();
 
         DbContext.Pessoas.Add(_novaPessoa);
         await DbContext.SaveChangesAsync();
@@ -245,6 +261,9 @@
             Snackbar.Add("Nome é obrigatório", Severity.Error);
             return;
         }
+        
+        _loading = true;
+        StateHasChanged();
 
         var pessoaDb = await DbContext.Pessoas.FindAsync(_pessoaEditando.Id);
         if (pessoaDb != null)
@@ -331,6 +350,7 @@
             TipoParte.FacaSeuMelhorSalaFeminino => "Faça Seu Melhor - Sala (F)",
             TipoParte.NossaVidaCrista => "Nossa Vida Cristã",
             TipoParte.EstudoLivro => "Estudo de Livro",
+            TipoParte.LeitorLivro => "Leitor do Livro",
             _ => tipo.ToString()
         };
     }

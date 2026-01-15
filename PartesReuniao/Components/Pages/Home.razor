@@ -1,7 +1,104 @@
 ﻿@page "/"
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Sistema de Designações</PageTitle>
 
-<h1>Hello, world!</h1>
+<MudText Typo="Typo.h3" Class="mb-6">📋 Sistema de Designações - Reunião do Meio de Semana</MudText>
 
-Welcome to your new app.
+<MudPaper Class="pa-6 mb-4" Elevation="2">
+    <MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4">🎯 Como Funciona o Sistema</MudText>
+    
+    <MudText Typo="Typo.body1" Class="mb-3">
+        Este sistema automatiza a designação de irmãos e irmãs para as partes da reunião do meio de semana, 
+        garantindo uma distribuição justa e equilibrada ao longo dos meses.
+    </MudText>
+</MudPaper>
+
+<MudPaper Class="pa-6 mb-4" Elevation="2">
+    <MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4">⚙️ Regras de Designação Automática</MudText>
+    
+    <MudList T="string">
+        <MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle">
+            <MudText><strong>Prioridade 1:</strong> Pessoas que NUNCA fizeram aquela parte específica</MudText>
+        </MudListItem>
+        <MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle">
+            <MudText><strong>Prioridade 2:</strong> Entre os que já fizeram, escolhe quem fez HÁ MAIS TEMPO</MudText>
+        </MudListItem>
+        <MudListItem T="string" Icon="@Icons.Material.Filled.Block">
+            <MudText><strong>Regra de Ouro:</strong> Uma pessoa designada para QUALQUER parte no mês NÃO será designada novamente no mesmo mês</MudText>
+        </MudListItem>
+        <MudListItem T="string" Icon="@Icons.Material.Filled.Refresh">
+            <MudText><strong>Exceção:</strong> Só repete se TODOS os habilitados já foram designados no mês</MudText>
+        </MudListItem>
+        <MudListItem T="string" Icon="@Icons.Material.Filled.Shuffle">
+            <MudText><strong>Aleatoriedade:</strong> Dentro de cada grupo de prioridade, a escolha é ALEATÓRIA</MudText>
+        </MudListItem>
+    </MudList>
+</MudPaper>
+
+
+<MudPaper Class="pa-6 mb-4" Elevation="2">
+    <MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4">🚀 Passo a Passo para Gerar o Mês</MudText>
+    
+    <MudTimeline TimelineOrientation="TimelineOrientation.Vertical">
+        <MudTimelineItem Color="Color.Primary" Size="Size.Small">
+            <MudText><strong>1. Cadastrar Pessoas</strong></MudText>
+            <MudText Typo="Typo.body2">Vá em "Pessoas" e adicione todos os irmãos e irmãs, marcando quais partes cada um pode fazer.</MudText>
+        </MudTimelineItem>
+        
+        <MudTimelineItem Color="Color.Primary" Size="Size.Small">
+            <MudText><strong>2. Acessar Gerar Mês</strong></MudText>
+            <MudText Typo="Typo.body2">Clique em "Gerar Mês" no menu lateral.</MudText>
+        </MudTimelineItem>
+        
+        <MudTimelineItem Color="Color.Primary" Size="Size.Small">
+            <MudText><strong>3. Selecionar Mês e Ano</strong></MudText>
+            <MudText Typo="Typo.body2">Escolha o mês e ano que deseja gerar a programação.</MudText>
+        </MudTimelineItem>
+        
+        <MudTimelineItem Color="Color.Primary" Size="Size.Small">
+            <MudText><strong>4. Clicar em "Carregar/Criar Semanas"</strong></MudText>
+            <MudText Typo="Typo.body2">O sistema irá gerar automaticamente as designações seguindo as regras.</MudText>
+        </MudTimelineItem>
+        
+        <MudTimelineItem Color="Color.Success" Size="Size.Small">
+            <MudText><strong>5. Revisar e Ajustar</strong></MudText>
+            <MudText Typo="Typo.body2">Navegue pelas abas das semanas e faça ajustes manuais se necessário.</MudText>
+        </MudTimelineItem>
+        
+        <MudTimelineItem Color="Color.Success" Size="Size.Small">
+            <MudText><strong>6. Salvar (última aba)</strong></MudText>
+            <MudText Typo="Typo.body2">Vá até a última semana do mês e clique em "Salvar Tudo".</MudText>
+        </MudTimelineItem>
+        
+        <MudTimelineItem Color="Color.Success" Size="Size.Small">
+            <MudText><strong>7. Gerar PDF</strong></MudText>
+            <MudText Typo="Typo.body2">Após salvar, o botão "Gerar PDF" será habilitado para download.</MudText>
+        </MudTimelineItem>
+    </MudTimeline>
+</MudPaper>
+
+<MudPaper Class="pa-6 mb-4" Elevation="2">
+    <MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4">💡 Dicas Importantes</MudText>
+    
+    <MudAlert Severity="Severity.Warning" Class="mb-3">
+        <strong>Cânticos e Temas:</strong> Os números dos cânticos e os temas das partes devem ser preenchidos manualmente.
+    </MudAlert>
+    
+    <MudAlert Severity="Severity.Info" Class="mb-3">
+        <strong>Edições Manuais:</strong> Você pode trocar qualquer pessoa manualmente após a geração automática.
+    </MudAlert>
+    
+    <MudAlert Severity="Severity.Success">
+        <strong>Histórico:</strong> O sistema mantém histórico de todas as designações para garantir rotatividade justa.
+    </MudAlert>
+</MudPaper>
+
+<MudPaper Class="pa-6" Elevation="2" Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+    <MudText Typo="Typo.h5" Class="mb-3">🎯 Objetivo do Sistema</MudText>
+    <MudText Typo="Typo.body1">
+        Facilitar a designação de partes da reunião, garantindo que todos os irmãos e irmãs participem 
+        de forma equilibrada e justa, respeitando as habilitações de cada um e promovendo o crescimento 
+        espiritual da congregação.
+    </MudText>
+</MudPaper>

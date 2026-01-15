@@ -11,5 +11,6 @@ public enum TipoParte
     FacaSeuMelhorCampoFeminino = 7,
     FacaSeuMelhorSalaFeminino = 8,
     NossaVidaCrista = 9,
-    EstudoLivro = 10
+    EstudoLivro = 10,
+    LeitorLivro = 11
 }
