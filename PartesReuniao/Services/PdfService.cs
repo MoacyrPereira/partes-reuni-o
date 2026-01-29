@@ -332,4 +332,105 @@ public class PdfService
         
         return pdf.GeneratePdf();
     }
+    
+    public async Task<byte[]> GerarPdfDesignacoesMecanicas(int mesInicial, int anoInicial, List<DesignacaoMecanica> designacoes)
+    {
+        QuestPDF.Settings.License = LicenseType.Community;
+        
+        var designacoesCompletas = new List<DesignacaoMecanica>();
+        foreach (var d in designacoes)
+        {
+            var completa = await _context.DesignacoesMecanicas
+                .Include(x => x.Indicador1)
+                .Include(x => x.Indicador2)
+                .Include(x => x.Indicador3)
+                .Include(x => x.Volante1)
+                .Include(x => x.Volante2)
+                .Include(x => x.AudioVideo1)
+                .Include(x => x.AudioVideo2)
+                .FirstOrDefaultAsync(x => x.Id == d.Id);
+            
+            if (completa != null)
+                designacoesCompletas.Add(completa);
+        }
+        
+        var pdf = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(1f, Unit.Centimetre);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(9));
+                
+                page.Content().Column(column =>
+                {
+                    // Header CONGREGAÇÃO CAPARROZ
+                    column.Item().AlignCenter()
+                        .Background(Colors.Black)
+                        .Padding(10)
+                        .Text("CONGREGAÇÃO CAPARROZ")
+                        .FontColor(Colors.White)
+                        .Bold()
+                        .FontSize(18);
+                    
+                    // Tabela
+                    column.Item().PaddingTop(0).Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.ConstantColumn(70);   // DATA
+                            columns.RelativeColumn(3.5f); // INDICADORES
+                            columns.RelativeColumn(2.5f); // VOLANTE
+                            columns.RelativeColumn(2f);   // ÁUDIO E VIDEO
+                        });
+                        
+                        // Header da tabela (fundo preto)
+                        table.Cell().Border(2).BorderColor(Colors.Black).Background(Colors.Black)
+                            .Padding(5).AlignCenter().Text("DATA").Bold().FontColor(Colors.White).FontSize(10);
+                        table.Cell().Border(2).BorderColor(Colors.Black).Background(Colors.Black)
+                            .Padding(5).AlignCenter().Text("INDICADORES").Bold().FontColor(Colors.White).FontSize(10);
+                        table.Cell().Border(2).BorderColor(Colors.Black).Background(Colors.Black)
+                            .Padding(5).AlignCenter().Text("VOLANTE").Bold().FontColor(Colors.White).FontSize(10);
+                        table.Cell().Border(2).BorderColor(Colors.Black).Background(Colors.Black)
+                            .Padding(5).AlignCenter().Text("ÁUDIO E VÍDEO").Bold().FontColor(Colors.White).FontSize(10);
+                        
+                        // Rows
+                        foreach (var d in designacoesCompletas.OrderBy(x => x.Data))
+                        {
+                            // DATA
+                            table.Cell().Border(2).BorderColor(Colors.Black)
+                                .Padding(5).AlignCenter()
+                                .Text(d.Data.ToString("d-MMM.", new System.Globalization.CultureInfo("pt-BR")))
+                                .FontSize(9);
+                            
+                            // INDICADORES
+                            table.Cell().Border(2).BorderColor(Colors.Black).Padding(5).AlignCenter().Column(col =>
+                            {
+                                if (d.Indicador1 != null) col.Item().Text(d.Indicador1.Nome.ToUpper()).FontSize(9);
+                                if (d.Indicador2 != null) col.Item().Text(d.Indicador2.Nome.ToUpper()).FontSize(9);
+                                if (d.Indicador3 != null) col.Item().Text(d.Indicador3.Nome.ToUpper()).FontSize(9);
+                            });
+                            
+                            // VOLANTE
+                            table.Cell().Border(2).BorderColor(Colors.Black).Padding(5).AlignCenter().Column(col =>
+                            {
+                                if (d.Volante1 != null) col.Item().Text(d.Volante1.Nome.ToUpper()).FontSize(9);
+                                if (d.Volante2 != null) col.Item().Text(d.Volante2.Nome.ToUpper()).FontSize(9);
+                            });
+                            
+                            // ÁUDIO E VIDEO
+                            table.Cell().Border(2).BorderColor(Colors.Black).Padding(5).AlignCenter().Column(col =>
+                            {
+                                if (d.AudioVideo1 != null) col.Item().Text(d.AudioVideo1.Nome.ToUpper()).FontSize(9);
+                                if (d.AudioVideo2 != null) col.Item().Text(d.AudioVideo2.Nome.ToUpper()).FontSize(9);
+                            });
+                        }
+                    });
+                });
+            });
+        });
+        
+        return pdf.GeneratePdf();
+    }
 }

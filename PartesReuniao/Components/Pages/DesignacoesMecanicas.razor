@@ -1,0 +1,278 @@
+﻿@page "/designacoes-mecanicas"
+@rendermode InteractiveServer
+@inject AppDbContext DbContext
+@inject DesignacaoMecanicaService Service
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject PdfService PdfService
+
+@if (_loadingGeral)
+{
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); backdrop-filter: blur(5px); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+        <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+    </div>
+}
+
+<MudText Typo="Typo.h4" Class="mb-4">Designações Mecânicas</MudText>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudGrid>
+        <MudItem xs="12" sm="3">
+            <MudSelect @bind-Value="_mesSelecionado" Label="Mês Inicial" Variant="Variant.Outlined">
+                @for (int i = 1; i <= 12; i++)
+                {
+                    var mes = i;
+                    <MudSelectItem Value="@mes">@ObterNomeMes(mes)</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudNumericField @bind-Value="_anoSelecionado" Label="Ano" Variant="Variant.Outlined" Min="2024" Max="2030" />
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudSelect @bind-Value="_diasReuniao" Label="Dias da Reunião" Variant="Variant.Outlined">
+                <MudSelectItem Value="DiasReuniao.QuartaSabado">Quarta e Sábado</MudSelectItem>
+                <MudSelectItem Value="DiasReuniao.QuintaSabado">Quinta e Sábado</MudSelectItem>
+                <MudSelectItem Value="DiasReuniao.QuartaDomingo">Quarta e Domingo</MudSelectItem>
+                <MudSelectItem Value="DiasReuniao.QuintaDomingo">Quinta e Domingo</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CarregarOuGerar" FullWidth="true" Class="mt-1">
+                Gerar 2 Meses
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_designacoes.Any())
+{
+    <MudStack Spacing="5">
+        @foreach (var d in _designacoes)
+        {
+            <MudPaper Class="pa-4" Elevation="4">
+                <MudGrid>
+                    <!-- DATA -->
+                    <MudItem xs="12" md="2">
+                        <MudText Typo="Typo.h6" Color="Color.Primary">
+                            <strong>@d.Data.ToString("dd-MMM.", new System.Globalization.CultureInfo("pt-BR"))</strong>
+                        </MudText>
+                    </MudItem>
+                    
+                    <!-- INDICADORES -->
+                    <MudItem xs="12" md="4">
+                        <MudText Typo="Typo.subtitle2" Class="mb-2"><strong>INDICADORES</strong></MudText>
+                        <MudSelect T="int?" @bind-Value="d.Indicador1Id" Variant="Variant.Outlined" Dense="true" Margin="Margin.Dense" Class="mb-2">
+                            @foreach (var p in _pessoasIndicadores)
+                            {
+                                <MudSelectItem Value="@((int?)p.Id)">@p.Nome</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudSelect T="int?" @bind-Value="d.Indicador2Id" Variant="Variant.Outlined" Dense="true" Margin="Margin.Dense" Class="mb-2">
+                            @foreach (var p in _pessoasIndicadores)
+                            {
+                                <MudSelectItem Value="@((int?)p.Id)">@p.Nome</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudSelect T="int?" @bind-Value="d.Indicador3Id" Variant="Variant.Outlined" Dense="true" Margin="Margin.Dense">
+                            @foreach (var p in _pessoasIndicadores)
+                            {
+                                <MudSelectItem Value="@((int?)p.Id)">@p.Nome</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    
+                    <!-- VOLANTE -->
+                    <MudItem xs="12" md="3">
+                        <MudText Typo="Typo.subtitle2" Class="mb-2"><strong>VOLANTE</strong></MudText>
+                        <MudSelect T="int?" @bind-Value="d.Volante1Id" Variant="Variant.Outlined" Dense="true" Margin="Margin.Dense" Class="mb-2">
+                            @foreach (var p in _pessoasVolante)
+                            {
+                                <MudSelectItem Value="@((int?)p.Id)">@p.Nome</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudSelect T="int?" @bind-Value="d.Volante2Id" Variant="Variant.Outlined" Dense="true" Margin="Margin.Dense">
+                            @foreach (var p in _pessoasVolante)
+                            {
+                                <MudSelectItem Value="@((int?)p.Id)">@p.Nome</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    
+                    <!-- ÁUDIO E VÍDEO -->
+                    <MudItem xs="12" md="3">
+                        <MudText Typo="Typo.subtitle2" Class="mb-2"><strong>ÁUDIO E VÍDEO</strong></MudText>
+                        <MudSelect T="int?" @bind-Value="d.AudioVideo1Id" Variant="Variant.Outlined" Dense="true" Margin="Margin.Dense" Class="mb-2">
+                            @foreach (var p in _pessoasAudioVideo)
+                            {
+                                <MudSelectItem Value="@((int?)p.Id)">@p.Nome</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudSelect T="int?" @bind-Value="d.AudioVideo2Id" Variant="Variant.Outlined" Dense="true" Margin="Margin.Dense">
+                            @foreach (var p in _pessoasAudioVideo)
+                            {
+                                <MudSelectItem Value="@((int?)p.Id)">@p.Nome</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        }
+    </MudStack>
+    
+    <MudDivider Class="my-4" />
+    
+    <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="SalvarTudo" StartIcon="@Icons.Material.Filled.Save" Class="mr-2">
+        Salvar Tudo
+    </MudButton>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GerarPdf" StartIcon="@Icons.Material.Filled.PictureAsPdf" Disabled="@(!_foiSalvo)">
+        Gerar PDF
+    </MudButton>
+}
+
+@code {
+    private int _mesSelecionado = DateTime.Now.Month;
+    private int _anoSelecionado = DateTime.Now.Year;
+    private DiasReuniao _diasReuniao = DiasReuniao.QuintaDomingo;
+    private List<DesignacaoMecanica> _designacoes = new();
+    private bool _loadingGeral = false;
+    private bool _foiSalvo = false;
+    
+    private List<Pessoa> _pessoasIndicadores = new();
+    private List<Pessoa> _pessoasVolante = new();
+    private List<Pessoa> _pessoasAudioVideo = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarPessoas();
+    }
+
+    private async Task CarregarPessoas()
+    {
+        _pessoasIndicadores = await DbContext.PessoasPartes
+            .Include(pp => pp.Pessoa)
+            .Where(pp => pp.TipoParte == TipoParte.Indicadores && pp.Habilitado && pp.Pessoa.Ativo)
+            .Select(pp => pp.Pessoa)
+            .OrderBy(p => p.Nome)
+            .ToListAsync();
+        
+        _pessoasVolante = await DbContext.PessoasPartes
+            .Include(pp => pp.Pessoa)
+            .Where(pp => pp.TipoParte == TipoParte.Volante && pp.Habilitado && pp.Pessoa.Ativo)
+            .Select(pp => pp.Pessoa)
+            .OrderBy(p => p.Nome)
+            .ToListAsync();
+        
+        _pessoasAudioVideo = await DbContext.PessoasPartes
+            .Include(pp => pp.Pessoa)
+            .Where(pp => pp.TipoParte == TipoParte.AudioVideo && pp.Habilitado && pp.Pessoa.Ativo)
+            .Select(pp => pp.Pessoa)
+            .OrderBy(p => p.Nome)
+            .ToListAsync();
+    }
+
+    private async Task CarregarOuGerar()
+    {
+        _loadingGeral = true;
+        _foiSalvo = false;
+        StateHasChanged();
+        
+        await Task.Delay(100);
+        await CarregarPessoas();
+        
+        var existentes = await DbContext.DesignacoesMecanicas
+            .Include(d => d.Indicador1)
+            .Include(d => d.Indicador2)
+            .Include(d => d.Indicador3)
+            .Include(d => d.Volante1)
+            .Include(d => d.Volante2)
+            .Include(d => d.AudioVideo1)
+            .Include(d => d.AudioVideo2)
+            .Where(d => d.MesInicial == _mesSelecionado && d.AnoInicial == _anoSelecionado)
+            .OrderBy(d => d.Data)
+            .ToListAsync();
+
+        if (existentes.Any())
+        {
+            _designacoes = existentes;
+            _foiSalvo = true;
+            Snackbar.Add("Designações carregadas!", Severity.Success);
+        }
+        else
+        {
+            _designacoes = await Service.GerarDesignacoesMecanicas(_mesSelecionado, _anoSelecionado, _diasReuniao);
+            Snackbar.Add("Designações geradas! Revise e salve.", Severity.Success);
+        }
+        
+        _loadingGeral = false;
+        StateHasChanged();
+    }
+
+    private async Task SalvarTudo()
+    {
+        _loadingGeral = true;
+        StateHasChanged();
+        
+        try
+        {
+            foreach (var d in _designacoes)
+            {
+                if (d.Id == 0)
+                    DbContext.DesignacoesMecanicas.Add(d);
+                else
+                    DbContext.DesignacoesMecanicas.Update(d);
+            }
+            
+            await DbContext.SaveChangesAsync();
+            
+            foreach (var d in _designacoes)
+                await Service.SalvarHistorico(d);
+            
+            _foiSalvo = true;
+            Snackbar.Add("Salvo com sucesso!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loadingGeral = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GerarPdf()
+    {
+        _loadingGeral = true;
+        StateHasChanged();
+    
+        try
+        {
+            var pdfBytes = await PdfService.GerarPdfDesignacoesMecanicas(_mesSelecionado, _anoSelecionado, _designacoes);
+        
+            await JS.InvokeVoidAsync("downloadFile", 
+                Convert.ToBase64String(pdfBytes), 
+                $"designacoes_mecanicas_{_mesSelecionado}_{_anoSelecionado}.pdf",
+                "application/pdf");
+        
+            Snackbar.Add("PDF gerado com sucesso!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao gerar PDF: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loadingGeral = false;
+            StateHasChanged();
+        }
+    }
+
+    private string ObterNomeMes(int mes)
+    {
+        var meses = new[] { "", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                           "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro" };
+        return meses[mes];
+    }
+}

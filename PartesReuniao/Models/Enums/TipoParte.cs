@@ -12,5 +12,8 @@ public enum TipoParte
     FacaSeuMelhorSalaFeminino = 8,
     NossaVidaCrista = 9,
     EstudoLivro = 10,
-    LeitorLivro = 11
+    LeitorLivro = 11,
+    Indicadores = 12,
+    Volante = 13,
+    AudioVideo = 14
 }

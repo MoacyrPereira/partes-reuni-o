@@ -17,6 +17,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Services
 builder.Services.AddScoped<DesignacaoService>();
 builder.Services.AddScoped<PdfService>();
+builder.Services.AddScoped<DesignacaoMecanicaService>();
 
 // MudBlazor
 builder.Services.AddMudServices();

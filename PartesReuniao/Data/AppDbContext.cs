@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<DesignacaoSemana> DesignacoesSemanas { get; set; }
     public DbSet<ParteMinisterio> PartesMinisterio { get; set; }
     public DbSet<ParteVidaCrista> PartesVidaCrista { get; set; }
+    public DbSet<DesignacaoMecanica> DesignacoesMecanicas { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -138,6 +139,22 @@ public class AppDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(e => e.PessoaId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+        
+        // Configurações de DesignacaoMecanica
+        modelBuilder.Entity<DesignacaoMecanica>(entity =>
+        {
+              entity.HasKey(e => e.Id);
+    
+              entity.HasOne(e => e.Indicador1).WithMany().HasForeignKey(e => e.Indicador1Id).OnDelete(DeleteBehavior.Restrict);
+              entity.HasOne(e => e.Indicador2).WithMany().HasForeignKey(e => e.Indicador2Id).OnDelete(DeleteBehavior.Restrict);
+              entity.HasOne(e => e.Indicador3).WithMany().HasForeignKey(e => e.Indicador3Id).OnDelete(DeleteBehavior.Restrict);
+              entity.HasOne(e => e.Volante1).WithMany().HasForeignKey(e => e.Volante1Id).OnDelete(DeleteBehavior.Restrict);
+              entity.HasOne(e => e.Volante2).WithMany().HasForeignKey(e => e.Volante2Id).OnDelete(DeleteBehavior.Restrict);
+              entity.HasOne(e => e.AudioVideo1).WithMany().HasForeignKey(e => e.AudioVideo1Id).OnDelete(DeleteBehavior.Restrict);
+              entity.HasOne(e => e.AudioVideo2).WithMany().HasForeignKey(e => e.AudioVideo2Id).OnDelete(DeleteBehavior.Restrict);
+    
+              entity.HasIndex(e => new { e.Data, e.MesInicial, e.AnoInicial });
         });
     }
 }
